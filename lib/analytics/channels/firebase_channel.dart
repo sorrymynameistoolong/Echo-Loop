@@ -1,53 +1,29 @@
 /// 全球/默认上报通道（Firebase Analytics）
-///
-/// 封装 `firebase_analytics` 包。Firebase 在 `main()` 中通过
-/// `Firebase.initializeApp()` 初始化，此 Channel 只负责启用采集和转发事件。
-///
-/// 中国大陆移动端使用 [UmengChannel]，此时 Firebase 采集会被
-/// `setAnalyticsCollectionEnabled(false)` 关闭。
+/// Firebase Analytics 通道已禁用。
+/// 原 firebase_analytics 实现已注释停用，保留同名类型以兼容旧代码。
 library;
-
-import 'package:firebase_analytics/firebase_analytics.dart';
 
 import '../analytics_channel.dart';
 
-/// Firebase Analytics 上报通道
 class FirebaseChannel implements AnalyticsChannel {
-  late final FirebaseAnalytics _analytics;
+  @override
+  String get name => 'Disabled';
 
   @override
-  String get name => 'Firebase';
+  Future<void> initialize() async {}
 
   @override
-  Future<void> initialize() async {
-    _analytics = FirebaseAnalytics.instance;
-    await _analytics.setAnalyticsCollectionEnabled(true);
-  }
+  Future<void> logEvent(String name, Map<String, Object>? parameters) async {}
 
   @override
-  Future<void> logEvent(String name, Map<String, Object>? parameters) {
-    return _analytics.logEvent(name: name, parameters: parameters);
-  }
+  Future<void> setUserId(String? id) async {}
 
   @override
-  Future<void> setUserId(String? id) {
-    return _analytics.setUserId(id: id);
-  }
+  Future<void> setUserProperty(String name, String? value) async {}
 
   @override
-  Future<void> setUserProperty(String name, String? value) {
-    return _analytics.setUserProperty(name: name, value: value);
-  }
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {}
 
   @override
-  Future<void> registerSuperProperties(Map<String, Object> properties) async {
-    // Firebase Analytics 没有 super properties 概念；no-op。
-    // 调用方需要事件级冻结属性时应在 PostHog 通道生效，Firebase 通道下相关
-    // 维度只能落到 user property（[setUserProperty]）。
-  }
-
-  @override
-  Future<void> unregisterSuperProperty(String name) async {
-    // Firebase Analytics 没有 super properties 概念；no-op。
-  }
+  Future<void> unregisterSuperProperty(String name) async {}
 }

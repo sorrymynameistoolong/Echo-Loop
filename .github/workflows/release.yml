@@ -148,8 +148,6 @@ jobs:
           BUILD_NAME: ${{ steps.ver.outputs.name }}
           BUILD_NUMBER: ${{ steps.ver.outputs.number }}
           API_BASE_URL: ${{ vars.API_BASE_URL }}
-          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
-          POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
@@ -157,14 +155,10 @@ jobs:
           flutter clean
           DART_DEFINES=(
             "--dart-define=API_BASE_URL=${API_BASE_URL}"
-            "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
             "--dart-define=SUPABASE_URL=${SUPABASE_URL}"
             "--dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}"
             "--dart-define=GOOGLE_WEB_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
           )
-          if [[ -n "$POSTHOG_API_KEY" ]]; then
-            DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
-          fi
           # 侧载 APK（GitHub / 官网直装）：声明 direct 渠道 → 走后端 Paddle Checkout。
           DART_DEFINES+=("--dart-define=DISTRIBUTION_CHANNEL=direct")
           flutter build apk --release --flavor=prod \
@@ -212,8 +206,6 @@ jobs:
           BUILD_NAME: ${{ steps.ver.outputs.name }}
           BUILD_NUMBER: ${{ steps.ver.outputs.number }}
           API_BASE_URL: ${{ vars.API_BASE_URL }}
-          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
-          POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
@@ -221,14 +213,10 @@ jobs:
         run: |
           DART_DEFINES=(
             "--dart-define=API_BASE_URL=${API_BASE_URL}"
-            "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
             "--dart-define=SUPABASE_URL=${SUPABASE_URL}"
             "--dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}"
             "--dart-define=GOOGLE_WEB_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
           )
-          if [[ -n "$POSTHOG_API_KEY" ]]; then
-            DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
-          fi
           if [[ -z "$REVENUECAT_API_KEY_GOOGLE" ]]; then
             echo "ERROR: REVENUECAT_API_KEY_GOOGLE repository variable is required for Android release builds." >&2
             exit 1
@@ -345,8 +333,6 @@ jobs:
           BUILD_NAME: ${{ steps.ver.outputs.name }}
           BUILD_NUMBER: ${{ steps.ver.outputs.number }}
           API_BASE_URL: ${{ vars.API_BASE_URL }}
-          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
-          POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
@@ -356,14 +342,10 @@ jobs:
           export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
           DART_DEFINES=(
             "--dart-define=API_BASE_URL=${API_BASE_URL}"
-            "--dart-define=POSTHOG_HOST=${POSTHOG_HOST}"
             "--dart-define=SUPABASE_URL=${SUPABASE_URL}"
             "--dart-define=SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}"
             "--dart-define=GOOGLE_WEB_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
           )
-          if [[ -n "$POSTHOG_API_KEY" ]]; then
-            DART_DEFINES+=("--dart-define=POSTHOG_API_KEY=${POSTHOG_API_KEY}")
-          fi
           if [[ -z "$REVENUECAT_API_KEY_APPLE" ]]; then
             echo "ERROR: REVENUECAT_API_KEY_APPLE repository variable is required for iOS release builds." >&2
             exit 1

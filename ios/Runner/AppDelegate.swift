@@ -2,7 +2,7 @@ import AVFoundation
 import Darwin
 import Flutter
 import NaturalLanguage
-import PostHog
+// import PostHog // 遥测已禁用
 import Speech
 import StoreKit
 import UIKit
@@ -1154,7 +1154,7 @@ private final class IOSAudioDecodeHandler: NSObject {
     //    且 PostHog iOS SDK 二次 setup 是 no-op，会让 Dart 端 sessionReplay=true 失效。
     // 因此 Info.plist 设置 com.posthog.posthog.AUTO_INIT=false 关闭插件自动 init，
     // 这里直接用完整配置（含 sessionReplay）启动 SDK。
-    setupPostHogNative()
+    // setupPostHogNative() // 遥测已禁用
 
     GeneratedPluginRegistrant.register(with: self)
 
@@ -1300,45 +1300,6 @@ private final class IOSAudioDecodeHandler: NSObject {
     }
   }
 
-  /// 从 Info.plist 读取 API Key/Host，构造完整 PostHog 配置（含 Session Replay）并启动 SDK。
-  ///
-  /// 与 posthog_flutter 插件 initPlugin 的差异：插件版本不支持 sessionReplay 配置项，
-  /// 这里手动启用 sessionReplay=true 才能让 iOS 录制生效。
-  ///
-  /// 配置项需与 lib/analytics/channels/posthog_channel.dart 保持一致：
-  /// SDK 已 init 后 Dart 端二次 setup 是 no-op（PostHogSDK.swift:90-96），
-  /// 所以 personProfiles / flushAt / flushIntervalSeconds 必须在这里就设上。
-  private func setupPostHogNative() {
-    let bundle = Bundle.main
-    guard
-      let apiKey = bundle.object(forInfoDictionaryKey: "com.posthog.posthog.API_KEY") as? String,
-      !apiKey.isEmpty
-    else {
-      return
-    }
-    let host = (bundle.object(forInfoDictionaryKey: "com.posthog.posthog.POSTHOG_HOST") as? String)
-      ?? PostHogConfig.defaultHost
-    let captureLifecycle = (bundle.object(
-      forInfoDictionaryKey: "com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS"
-    ) as? Bool) ?? true
-
-    // 必须在 PostHogSDK.shared.setup 之前设置：
-    // PostHogReplayIntegration.install() 内部立即调 start()，start() 用 isNotFlutter()
-    // （检查 postHogSdkName != "posthog-flutter"）决定是否启动原生 viewLayoutPublisher
-    // 截图通路。该判断只在 start() 中执行一次，订阅后无法撤销。如果此处不预设 sdkName，
-    // 默认值是 "posthog-ios"，会导致原生 + Dart PostHogWidget 同时发 $snapshot，重复采集。
-    postHogSdkName = "posthog-flutter"
-
-    let config = PostHogConfig(apiKey: apiKey, host: host)
-    config.captureScreenViews = false
-    config.captureApplicationLifecycleEvents = captureLifecycle
-    config.personProfiles = .always
-    config.flushAt = 5
-    config.flushIntervalSeconds = 3
-    config.sessionReplay = true
-    // Flutter 端走 dart:io HttpClient 而非 iOS URLSession，关闭网络遥测避免误报。
-    config.sessionReplayConfig.captureNetworkTelemetry = false
-
-    PostHogSDK.shared.setup(config)
-  }
+  // 原 setupPostHogNative() 实现已整体注释停用：
+  // 不读取 API key，不创建 PostHogConfig，不启用生命周期采集或 Session Replay。
 }

@@ -1,51 +1,30 @@
-/// Debug 模式日志通道
+/// 遥测禁用后的兼容通道。
 ///
-/// 只将事件输出到 [AppLogger]，不发送到任何远程服务。
-/// 在 `kDebugMode` 下自动使用，避免开发期间污染生产数据。
+/// 所有方法均为 no-op：不写日志、不联网、不保存用户标识或属性。
 library;
 
 import '../analytics_channel.dart';
-import '../../services/app_logger.dart';
 
 /// 仅打日志的分析通道（Debug 用）
 class LogOnlyChannel implements AnalyticsChannel {
-  static const _tag = 'Analytics';
+  @override
+  String get name => 'Disabled';
 
   @override
-  String get name => 'LogOnly';
+  Future<void> initialize() async {}
 
   @override
-  Future<void> initialize() async {
-    AppLogger.log(_tag, 'LogOnlyChannel initialized (debug mode)');
-  }
+  Future<void> logEvent(String name, Map<String, Object>? parameters) async {}
 
   @override
-  Future<void> logEvent(String name, Map<String, Object>? parameters) async {
-    final params =
-        parameters?.entries.map((e) => '${e.key}=${e.value}').join(', ') ?? '';
-    AppLogger.log(_tag, 'Event: $name${params.isEmpty ? '' : ' {$params}'}');
-  }
+  Future<void> setUserId(String? id) async {}
 
   @override
-  Future<void> setUserId(String? id) async {
-    AppLogger.log(_tag, 'setUserId: $id');
-  }
+  Future<void> setUserProperty(String name, String? value) async {}
 
   @override
-  Future<void> setUserProperty(String name, String? value) async {
-    AppLogger.log(_tag, 'setUserProperty: $name=$value');
-  }
+  Future<void> registerSuperProperties(Map<String, Object> properties) async {}
 
   @override
-  Future<void> registerSuperProperties(Map<String, Object> properties) async {
-    final pairs = properties.entries
-        .map((e) => '${e.key}=${e.value}')
-        .join(', ');
-    AppLogger.log(_tag, 'registerSuperProperties: {$pairs}');
-  }
-
-  @override
-  Future<void> unregisterSuperProperty(String name) async {
-    AppLogger.log(_tag, 'unregisterSuperProperty: $name');
-  }
+  Future<void> unregisterSuperProperty(String name) async {}
 }

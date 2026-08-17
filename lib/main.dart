@@ -5,7 +5,6 @@ import 'dart:io' show Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -29,12 +28,8 @@ import 'config/revenuecat_config.dart' as revenuecat_config;
 import 'config/paddle_config.dart' as paddle_config;
 import 'providers/review_reminder_provider.dart';
 import 'services/notification_tap_router_bridge.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'analytics/analytics_providers.dart';
-import 'analytics/permission_snapshot.dart';
-import 'services/network_permission_trigger.dart';
 import 'services/user_id_service.dart';
-import 'firebase_options.dart';
 import 'providers/learning_settings_provider.dart';
 import 'providers/tts/kokoro_model_provider.dart';
 import 'providers/tts/piper_model_provider.dart';
@@ -172,16 +167,8 @@ void main() async {
 
   await initEchoLoopAudioHandler();
 
-  // iOS: 通过原生网络栈触发系统网络权限弹窗。
-  // 启动时立即触发（包括 Onboarding 期间的新用户），原因：埋点上报
-  // （app_permission_snapshot / onboarding_survey_shown 等）依赖网络通畅，
-  // 推迟会丢失事件。系统弹窗由 OS 决定具体呈现时机，可能延后。
-  if (!kIsWeb && Platform.isIOS) {
-    unawaited(NetworkPermissionTrigger.trigger(prefs, apiBaseUrl));
-  }
-
-  // 初始化 Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // 遥测已禁用：不再触发网络权限弹窗，也不初始化 Firebase Analytics。
+  // 原实现保留在 Git 历史中，避免任何启动阶段的遥测或权限探测。
 
   // 初始化 Supabase（认证 + 未来云同步用）
   //
@@ -254,19 +241,10 @@ void main() async {
   // 初始化用户 ID（SecureStorage 持久化，卸载重装可恢复）
   final userId = await initUserIdService(prefs);
 
-  // 初始化分析服务（根据 geo 选择 Firebase/友盟/Log 通道）
+  // 遥测已禁用：保留本地 no-op AnalyticsService 以兼容现有业务调用点，
+  // 不初始化任何第三方 SDK、不采集权限快照、不发送网络事件。
   final analyticsService = await initAnalyticsService(prefs, userId: userId);
   initAnalytics(analyticsService);
-
-  // 上报 4 类系统授权状态（mic / speech / notification / network）：
-  // super properties + person properties + app_permission_snapshot 三路写入。
-  // 失败不影响启动；底层方法已各自做 consent gate + try/catch。
-  try {
-    final snapshot = await PermissionSnapshot.capture(prefs);
-    await analyticsService.reportPermissionSnapshot(snapshot);
-  } catch (e) {
-    AppLogger.log('App', '权限状态埋点失败: $e');
-  }
 
   // 清理上次残留的录音临时文件（沙盒/tmp/ 中超过 60 秒的文件），不阻塞启动
   unawaited(cleanupRecordingTempFiles());
@@ -353,12 +331,7 @@ void main() async {
   unawaited(cleanupOfficialDownloadTmp());
 
   runApp(
-    // PostHogWidget：posthog_flutter 5.x Session Replay 必需的根包装。
-    // 负责 Flutter 端变更检测 + 截图并桥接原生 SDK 上报 $snapshot 事件；
-    // 不包的话即便 PostHogConfig.sessionReplay=true 也不会生成录像。
-    // 当前通道非 PostHog 时 Posthog().config 为 null，此组件会直接跳过，不影响其他通道。
-    PostHogWidget(
-      child: ProviderScope(
+      ProviderScope(
         overrides: [
           packageInfoProvider.overrideWithValue(packageInfo),
           isFirstLaunchProvider.overrideWithValue(isFirstLaunch),
@@ -402,7 +375,6 @@ void main() async {
         ],
         child: const EchoLoopApp(),
       ),
-    ),
   );
 }
 
@@ -518,11 +490,7 @@ class _EchoLoopAppState extends ConsumerState<EchoLoopApp>
         );
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        // 立即刷新 PostHog 埋点队列，避免 Application Backgrounded 等事件
-        // 卡在内存队列里，App 被 OS 挂起 / 杀进程时丢失。
-        // PostHog 默认 flushAt=20 / flushInterval=30s，单纯依赖默认策略
-        // 在快速切后台场景容易丢。
-        unawaited(Posthog().flush());
+        // 遥测已禁用：不刷新任何第三方埋点队列。
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
       // no-op
